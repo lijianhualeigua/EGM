@@ -82,9 +82,9 @@ void DisplayRobotMessage(EgmRobot *pRobotMessage)
     if (pRobotMessage->has_header() && pRobotMessage->header().has_seqno() && pRobotMessage->header().has_tm() && pRobotMessage->header().has_mtype())
     {
         printf("SeqNo=%d || Tm=%u || Type=%d\n", pRobotMessage->header().seqno(), pRobotMessage->header().tm(), pRobotMessage->header().mtype());
-        printf("Joint = %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf\n", pRobotMessage->planned().joints().joints(0)*rad_deg, pRobotMessage->planned().joints().joints(1)*rad_deg,
-            pRobotMessage->planned().joints().joints(2)*rad_deg, pRobotMessage->planned().joints().joints(3)*rad_deg,
-            pRobotMessage->planned().joints().joints(4)*rad_deg, pRobotMessage->planned().joints().joints(5)*rad_deg);
+        printf("Joint = %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf\n", pRobotMessage->feedback().joints().joints(0)*rad_deg, pRobotMessage->feedback().joints().joints(1)*rad_deg,
+            pRobotMessage->feedback().joints().joints(2)*rad_deg, pRobotMessage->feedback().joints().joints(3)*rad_deg,
+            pRobotMessage->feedback().joints().joints(4)*rad_deg, pRobotMessage->feedback().joints().joints(5)*rad_deg);
     }
     else
     {
