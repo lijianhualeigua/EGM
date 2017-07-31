@@ -10,6 +10,7 @@
 
 static int portNumber = 6510;
 static unsigned int sequenceNumber = 0;
+const double rad_deg = 180 / 3.1415926;
 
 using namespace abb::egm;
 
@@ -81,10 +82,9 @@ void DisplayRobotMessage(EgmRobot *pRobotMessage)
     if (pRobotMessage->has_header() && pRobotMessage->header().has_seqno() && pRobotMessage->header().has_tm() && pRobotMessage->header().has_mtype())
     {
         printf("SeqNo=%d || Tm=%u || Type=%d\n", pRobotMessage->header().seqno(), pRobotMessage->header().tm(), pRobotMessage->header().mtype());
-        printf("Joint=%8.2lf\n", pRobotMessage->planned().joints().joints(0));
-            
-            //joints().joints(0), pRobotMessage->feedback().joints().joints(1), pRobotMessage->feedback().joints().joints(2),
-            //pRobotMessage->feedback().joints().joints(3), pRobotMessage->feedback().joints().joints(4), pRobotMessage->feedback().joints().joints(5));
+        printf("Joint = %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf\n", pRobotMessage->planned().joints().joints(0)*rad_deg, pRobotMessage->planned().joints().joints(1)*rad_deg,
+            pRobotMessage->planned().joints().joints(2)*rad_deg, pRobotMessage->planned().joints().joints(3)*rad_deg,
+            pRobotMessage->planned().joints().joints(4)*rad_deg, pRobotMessage->planned().joints().joints(5)*rad_deg);
     }
     else
     {
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     struct sockaddr_in serverAddr, clientAddr;
     int len;
     char protoMessage[1400];
-    // Input joint command or cartesian command
+    // Input joint command or Cartesian command
     bool joint_cmd = false;  
    
     /* Init winsock */
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
    
     pos pos;
 
-    std::cout << "Commands: c = set cartesian pose command, j = set joint pose command" << std::endl;
+    std::cout << "Commands: c = set Cartesian pose command, j = set joint pose command" << std::endl;
     
     char c = _getch();
     switch (c) {
