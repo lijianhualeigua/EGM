@@ -1,21 +1,20 @@
 #ifdef __linux__ 
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <arpa/inet.h>
-    //#include <netdb.h>  /* Needed for getaddrinfo() and freeaddrinfo() */
-    //#include <unistd.h> /* Needed for close() */
-
+#include <ncurses.h>  // sudo apt-get install ncurses-dev
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>  
+#include <unistd.h> 
 #elif _WIN32
-    #ifndef _WIN32_WINNT
-        #define _WIN32_WINNT 0x0603  /* Windows 8.1. */
-    #endif
-    #include "stdafx.h"
-    #include <WinSock2.h>
-    #include <conio.h>
-    #pragma comment(lib, "Ws2_32.lib")      // socket lib
-    #pragma comment(lib, "libprotobuf.lib") // protobuf lib
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0603  /* Windows 8.1. */
+#endif
+#include "stdafx.h"
+#include <WinSock2.h>
+#include <conio.h>
+#pragma comment(lib, "Ws2_32.lib")      // link socket lib
+#pragma comment(lib, "libprotobuf.lib") // link protobuf lib
 #else
 #endif
 
@@ -40,12 +39,13 @@ union pos {
 };
 
 // Create a simple sensor message
-void CreateSensorMessage(EgmSensor* pSensorMessage, pos &pos, bool &joint_cmd)
-{
+void CreateSensorMessage(EgmSensor* pSensorMessage, pos &pos, bool &joint_cmd) {
     EgmHeader* header = new EgmHeader();
     header->set_mtype(EgmHeader_MessageType_MSGTYPE_CORRECTION);
     header->set_seqno(sequenceNumber++);
+#ifdef _WIN32
     header->set_tm(GetTickCount());
+#endif
     pSensorMessage->set_allocated_header(header);
 
     EgmPlanned *planned = new EgmPlanned();
@@ -91,57 +91,38 @@ void CreateSensorMessage(EgmSensor* pSensorMessage, pos &pos, bool &joint_cmd)
 }
 
 // Display inbound robot message
-void DisplayRobotMessage(EgmRobot *pRobotMessage)
-{
-    if (pRobotMessage->has_header() && pRobotMessage->header().has_seqno() && pRobotMessage->header().has_tm() && pRobotMessage->header().has_mtype())
-    {
+void DisplayRobotMessage(EgmRobot *pRobotMessage) {
+    if (pRobotMessage->has_header() && pRobotMessage->header().has_seqno() && pRobotMessage->header().has_tm() && pRobotMessage->header().has_mtype()) {
         printf("SeqNo=%d || Tm=%u || Type=%d\n", pRobotMessage->header().seqno(), pRobotMessage->header().tm(), pRobotMessage->header().mtype());
         printf("Joint = %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf\n", pRobotMessage->feedback().joints().joints(0)*rad_deg, pRobotMessage->feedback().joints().joints(1)*rad_deg,
             pRobotMessage->feedback().joints().joints(2)*rad_deg, pRobotMessage->feedback().joints().joints(3)*rad_deg,
             pRobotMessage->feedback().joints().joints(4)*rad_deg, pRobotMessage->feedback().joints().joints(5)*rad_deg);
     }
-    else
-    {
+    else {
         printf("No header\n");
     }
 }
 
-int main(int argc, char** argv)
-{
-    SOCKET sockfd;
-    int n;
-    struct sockaddr_in serverAddr, clientAddr;
-    int len;
+int main(int argc, char** argv) {
     char protoMessage[1400];
     // Input joint command or Cartesian command
     bool joint_cmd = false;
+    std::string messageBuffer;
 
-#ifdef	_WIN32
-    /* Init winsock */
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-    {
-        fprintf(stderr, "Could not open Windows connection.\n");
-        exit(0);
-    }
-#endif
-
-    // create socket to listen on
-    sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
-
-    memset(&serverAddr, sizeof(serverAddr), 0);
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serverAddr.sin_port = htons(portNumber);
-
-    // listen on all interfaces
-    int result = bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
-   
     pos pos;
 
     std::cout << "Commands: c = set Cartesian pose command, j = set joint pose command" << std::endl;
-    
+
+#ifdef _WIN32
     char c = _getch();
+#elif __linux__
+    // This will clear the screen!
+    initscr();
+    char c = (char)getch();
+    nodelay(stdscr, TRUE);
+    endwin();
+#endif
+
     switch (c) {
     case 'c':
         std::cout << "Please specify the Cartesian position (mm) for the robot." << std::endl;
@@ -156,14 +137,34 @@ int main(int argc, char** argv)
         break;
     }
 
-    std::string messageBuffer;
-    while (!result)
-    {
+#ifdef	_WIN32
+    SOCKET sockfd;
+    int n;
+    struct sockaddr_in serverAddr, clientAddr;
+    int len;
+    /* Init winsock */
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        fprintf(stderr, "Could not open Windows connection.\n");
+        exit(0);
+    }
+
+    // create socket to listen on
+    sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
+
+    memset(&serverAddr, sizeof(serverAddr), 0);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddr.sin_port = htons(portNumber);
+
+    // listen on all interfaces
+    int result = bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+
+    while (!result) {
         // receive and display message from robot
         len = sizeof(clientAddr);
         n = recvfrom(sockfd, protoMessage, 1400, 0, (struct sockaddr *)&clientAddr, &len);
-        if (n < 0)
-        {
+        if (n < 0) {
             printf("Error receive message\n");
             continue;
         }
@@ -178,18 +179,64 @@ int main(int argc, char** argv)
         EgmSensor *pSensorMessage = new EgmSensor();
         CreateSensorMessage(pSensorMessage, pos, joint_cmd);
         pSensorMessage->SerializeToString(&messageBuffer);
-        
+
         // send a message to the robot
         n = sendto(sockfd, messageBuffer.c_str(), messageBuffer.length(), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
-        if (n < 0)
-        {
+        if (n < 0) {
             printf("Error send message\n");
         }
         delete pSensorMessage;
     }
-
-#ifdef _WIN32
+    closesocket(sockfd);
     WSACleanup();
+
+#elif __linux__
+    int sockfd;
+    int num;
+    socklen_t len;
+    int n;
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        printf("cannot create socket");
+        return 0;
+    }
+
+    struct sockaddr_in serverAddr, clientAddr;
+    memset(&serverAddr, sizeof(serverAddr), 0);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddr.sin_port = htons(portNumber);
+
+    int result = bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+
+    while (!result) {
+        // receive and display message from robot
+        len = sizeof(clientAddr);
+        num = recvfrom(sockfd, protoMessage, 1400, 0, (struct sockaddr *)&clientAddr, &len);
+        if (n < 0) {
+            printf("Error receive message\n");
+            continue;
+        }
+
+        // parse inbound message
+        EgmRobot *pRobotMessage = new EgmRobot();
+        pRobotMessage->ParseFromArray(protoMessage, n);
+        DisplayRobotMessage(pRobotMessage);
+        delete pRobotMessage;
+
+        // create and send a sensor message
+        EgmSensor *pSensorMessage = new EgmSensor();
+        CreateSensorMessage(pSensorMessage, pos, joint_cmd);
+        pSensorMessage->SerializeToString(&messageBuffer);
+
+        // send a message to the robot
+        num = sendto(sockfd, messageBuffer.c_str(), messageBuffer.length(), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+        if (num < 0) {
+            printf("Error send message\n");
+        }
+        delete pSensorMessage;
+    }
+    close(sockfd);
+
 #endif
 
     return 0;
