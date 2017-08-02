@@ -1,4 +1,5 @@
 #ifdef __linux__ 
+#include "ros/ros.h"
 #include <ncurses.h>  // sudo apt-get install ncurses-dev
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -92,11 +93,17 @@ void CreateSensorMessage(EgmSensor* pSensorMessage, pos &pos, bool &joint_cmd) {
 
 // Display inbound robot message
 void DisplayRobotMessage(EgmRobot *pRobotMessage) {
+    // one interesting bug: if using ROS node, I cannot get pRobotMessage->feedback().joints().joints(3) and later ones. Google Protobuf exception raised.
+    // without using ROS node, everything is fine.
     if (pRobotMessage->has_header() && pRobotMessage->header().has_seqno() && pRobotMessage->header().has_tm() && pRobotMessage->header().has_mtype()) {
         printf("SeqNo=%d || Tm=%u || Type=%d\n", pRobotMessage->header().seqno(), pRobotMessage->header().tm(), pRobotMessage->header().mtype());
-        printf("Joint = %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf || %8.2lf\n", pRobotMessage->feedback().joints().joints(0)*rad_deg, pRobotMessage->feedback().joints().joints(1)*rad_deg,
-            pRobotMessage->feedback().joints().joints(2)*rad_deg, pRobotMessage->feedback().joints().joints(3)*rad_deg,
+#ifdef	_WIN32
+        printf("Joint=%6.2lf || %6.2lf || %6.2lf || %6.2lf || %6.2lf || %6.2lf \n", pRobotMessage->feedback().joints().joints(0)*rad_deg, pRobotMessage->feedback().joints().joints(1)*rad_deg, 
+            pRobotMessage->feedback().joints().joints(2)*rad_deg, pRobotMessage->feedback().joints().joints(3)*rad_deg, 
             pRobotMessage->feedback().joints().joints(4)*rad_deg, pRobotMessage->feedback().joints().joints(5)*rad_deg);
+#elif __linux__
+        printf("Joint=%6.2lf || %6.2lf || %6.2lf \n", pRobotMessage->feedback().joints().joints(0)*rad_deg, pRobotMessage->feedback().joints().joints(1)*rad_deg, pRobotMessage->feedback().joints().joints(2)*rad_deg);
+#endif
     }
     else {
         printf("No header\n");
@@ -191,6 +198,8 @@ int main(int argc, char** argv) {
     WSACleanup();
 
 #elif __linux__
+    ros::init(argc, argv, "to_EGM");
+    ros::NodeHandle nh;
     int sockfd;
     int num;
     socklen_t len;
@@ -207,33 +216,35 @@ int main(int argc, char** argv) {
     serverAddr.sin_port = htons(portNumber);
 
     int result = bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+    while (ros::ok()) {
+        while (!result) {
+            // receive and display message from robot
+            len = sizeof(clientAddr);
+            num = recvfrom(sockfd, protoMessage, 1400, 0, (struct sockaddr *)&clientAddr, &len);
+            if (n < 0) {
+                printf("Error receive message\n");
+                continue;
+            }
 
-    while (!result) {
-        // receive and display message from robot
-        len = sizeof(clientAddr);
-        num = recvfrom(sockfd, protoMessage, 1400, 0, (struct sockaddr *)&clientAddr, &len);
-        if (n < 0) {
-            printf("Error receive message\n");
-            continue;
+            // parse inbound message
+            EgmRobot *pRobotMessage = new EgmRobot();
+            pRobotMessage->ParseFromArray(protoMessage, n);
+            DisplayRobotMessage(pRobotMessage);
+            delete pRobotMessage;
+
+            // create and send a sensor message
+            EgmSensor *pSensorMessage = new EgmSensor();
+            CreateSensorMessage(pSensorMessage, pos, joint_cmd);
+            pSensorMessage->SerializeToString(&messageBuffer);
+
+            // send a message to the robot
+            num = sendto(sockfd, messageBuffer.c_str(), messageBuffer.length(), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+            if (num < 0) {
+                printf("Error send message\n");
+            }
+            delete pSensorMessage;
         }
-
-        // parse inbound message
-        EgmRobot *pRobotMessage = new EgmRobot();
-        pRobotMessage->ParseFromArray(protoMessage, n);
-        DisplayRobotMessage(pRobotMessage);
-        delete pRobotMessage;
-
-        // create and send a sensor message
-        EgmSensor *pSensorMessage = new EgmSensor();
-        CreateSensorMessage(pSensorMessage, pos, joint_cmd);
-        pSensorMessage->SerializeToString(&messageBuffer);
-
-        // send a message to the robot
-        num = sendto(sockfd, messageBuffer.c_str(), messageBuffer.length(), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
-        if (num < 0) {
-            printf("Error send message\n");
-        }
-        delete pSensorMessage;
+        ros::spinOnce();
     }
     close(sockfd);
 
