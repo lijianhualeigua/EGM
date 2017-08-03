@@ -201,7 +201,6 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "to_EGM");
     ros::NodeHandle nh;
     int sockfd;
-    int num;
     socklen_t len;
     int n;
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -220,7 +219,7 @@ int main(int argc, char** argv) {
         while (!result) {
             // receive and display message from robot
             len = sizeof(clientAddr);
-            num = recvfrom(sockfd, protoMessage, 1400, 0, (struct sockaddr *)&clientAddr, &len);
+            n = recvfrom(sockfd, protoMessage, 1400, 0, (struct sockaddr *)&clientAddr, &len);
             if (n < 0) {
                 printf("Error receive message\n");
                 continue;
@@ -238,8 +237,8 @@ int main(int argc, char** argv) {
             pSensorMessage->SerializeToString(&messageBuffer);
 
             // send a message to the robot
-            num = sendto(sockfd, messageBuffer.c_str(), messageBuffer.length(), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
-            if (num < 0) {
+            n = sendto(sockfd, messageBuffer.c_str(), messageBuffer.length(), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+            if (n < 0) {
                 printf("Error send message\n");
             }
             delete pSensorMessage;
