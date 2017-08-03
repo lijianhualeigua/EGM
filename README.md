@@ -10,3 +10,6 @@ sudo apt-get install protobuf-compiler (this will install version 2.x).
 Also, you do not need stdafx.* and targetver.h which are specific for Windows.
 
 Be sure to set correct remote IP address for external device in RobotStudio.
+
+The ros directory contains a simple ROS node which interfaces to EGM by a Xbox360 Joystick , using 
+joint position control.
