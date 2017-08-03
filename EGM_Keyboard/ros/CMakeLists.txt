@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Protobuf REQUIRED)
 
+catkin_package()
+
 include_directories(include ${catkin_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
 
 add_executable(egm src/EGM_Joystick.cpp src/egm.pb.cc src/egm.cpp)
