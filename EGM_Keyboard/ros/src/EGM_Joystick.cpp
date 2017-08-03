@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include <sensor_msgs/Joy.h>
 #include <egm.h>
-#include <ncurses.h>  // sudo apt-get install ncurses-dev
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

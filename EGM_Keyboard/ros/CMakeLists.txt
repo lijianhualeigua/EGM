@@ -8,9 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Protobuf REQUIRED)
-find_package(Curses REQUIRED)
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR})
+include_directories(include ${catkin_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
 
 add_executable(egm src/EGM_Joystick.cpp src/egm.pb.cc src/egm.cpp)
-target_link_libraries(egm ${catkin_LIBRARIES} ${PROTOBUF_LIBRARIES} ${CURSES_LIBRARIES})
+target_link_libraries(egm ${catkin_LIBRARIES} ${PROTOBUF_LIBRARIES})
