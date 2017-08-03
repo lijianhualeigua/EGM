@@ -13,3 +13,5 @@ Be sure to set correct remote IP address for external device in RobotStudio.
 
 The ros directory contains a simple ROS node which interfaces to EGM by a Xbox360 Joystick , using 
 joint position control.
+
+Be sure to check if the Joystick is configured successfully first (reference: http://wiki.ros.org/joy/Tutorials/ConfiguringALinuxJoystick).
