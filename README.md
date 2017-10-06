@@ -16,5 +16,8 @@ joint position control.
 
 Be sure to check if the Joystick is configured successfully first (reference: http://wiki.ros.org/joy/Tutorials/ConfiguringALinuxJoystick).
 
-Tutorial:
+# Tutorial
+EGM Compile:
 https://docs.google.com/document/d/1D8IZryG13nEBPCiD3mWVf8wryvLYuSUlSD63wkiGr8o/edit
+RobotStudio Setup:
+https://docs.google.com/document/d/1wvwB2GgZjKCHqpVx5xUWfZQm0sD64qzcKVFJn2B3254/edit 
