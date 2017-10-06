@@ -18,6 +18,7 @@ Be sure to check if the Joystick is configured successfully first (reference: ht
 
 # Tutorial
 EGM Compile:
-https://docs.google.com/document/d/1D8IZryG13nEBPCiD3mWVf8wryvLYuSUlSD63wkiGr8o/edit
+https://docs.google.com/document/d/1D8IZryG13nEBPCiD3mWVf8wryvLYuSUlSD63wkiGr8o/edit?usp=sharing
+
 RobotStudio Setup:
-https://docs.google.com/document/d/1wvwB2GgZjKCHqpVx5xUWfZQm0sD64qzcKVFJn2B3254/edit 
+https://docs.google.com/document/d/1wvwB2GgZjKCHqpVx5xUWfZQm0sD64qzcKVFJn2B3254/edit?usp=sharing 
