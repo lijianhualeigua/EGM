@@ -15,3 +15,6 @@ The ros directory contains a simple ROS node which interfaces to EGM by a Xbox36
 joint position control.
 
 Be sure to check if the Joystick is configured successfully first (reference: http://wiki.ros.org/joy/Tutorials/ConfiguringALinuxJoystick).
+
+Tutorial:
+https://docs.google.com/document/d/1D8IZryG13nEBPCiD3mWVf8wryvLYuSUlSD63wkiGr8o/edit
